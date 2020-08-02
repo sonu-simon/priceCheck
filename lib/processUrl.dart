@@ -1,7 +1,13 @@
 import 'package:amazon_kt/productModel.dart';
+import 'package:awesome_dialog/awesome_dialog.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-processUrl(String url) async {
+import 'main.dart';
+
+// bool triggerSetState = false;
+
+processUrl(String url, BuildContext context) async {
   String amazonASIN = 'initialASIN';
   String responseBody = '';
   String amazonPrice;
@@ -59,21 +65,30 @@ processUrl(String url) async {
 
       //If found, update values, else append to list.
       if (foundProductAt == -1) {
-        products.add(Product(
-            productASIN: amazonASIN,
-            productName: amazonName,
-            productPrice: amazonPrice,
-            productUrl: amazonURL));
+        products.add(
+          Product(
+              productASIN: amazonASIN,
+              productName: amazonName,
+              productPrice: amazonPrice,
+              productUrl: amazonURL,
+              priceHistory: [amazonPrice]),
+        );
+
+        // triggerSetState = true;
+        // print(triggerSetState);
+
         products.forEach((element) {
           print(element.productName);
         });
       } else {
-        Product product = Product(
-            productASIN: amazonASIN,
-            productName: amazonName,
-            productPrice: amazonPrice,
-            productUrl: amazonURL);
-        products[foundProductAt] = product;
+        return AwesomeDialog(
+          context: context,
+          dialogType: DialogType.INFO,
+          animType: AnimType.BOTTOMSLIDE,
+          title: 'Uh..Oh!',
+          desc: 'Looks like this product is already here.',
+          btnOkOnPress: () {},
+        )..show();
       }
     }
   }

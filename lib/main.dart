@@ -1,3 +1,4 @@
+import 'package:amazon_kt/processUrl.dart';
 import 'package:amazon_kt/productModel.dart';
 import 'package:amazon_kt/receiveShare.dart';
 import 'package:flutter/material.dart';
@@ -26,7 +27,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    initRcvShare();
+    initRcvShare(context);
   }
 
   @override
@@ -37,7 +38,27 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return
+        // triggerSetState
+        // ? AlertDialog(
+        //     shape:
+        //         RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        //     title: Text("Add task"),
+        //     content: Column(
+        //       mainAxisSize: MainAxisSize.min,
+        //       children: <Widget>[
+        //         RaisedButton(
+        //             child: Text("OK"),
+        //             onPressed: () {
+        //               setState(() {
+        //                 triggerSetState = false;
+        //               });
+        //             })
+        //       ],
+        //     ),
+        //   )
+        // :
+        Scaffold(
       appBar: AppBar(
         title: Text('Amazon Prices'),
         backgroundColor: Colors.green,

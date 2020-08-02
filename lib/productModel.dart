@@ -6,7 +6,11 @@ class Product {
   List priceHistory;
 
   Product(
-      {this.productASIN, this.productName, this.productPrice, this.productUrl});
+      {this.productASIN,
+      this.productName,
+      this.productPrice,
+      this.productUrl,
+      this.priceHistory});
 }
 
 List<Product> products = [];
