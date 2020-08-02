@@ -6,6 +6,7 @@ processUrl(String url) async {
   String responseBody = '';
   String amazonPrice;
   String amazonName;
+  String amazonURL;
 
   if (url == '') {
     print("URL is empty");
@@ -21,7 +22,7 @@ processUrl(String url) async {
     print(amazonASIN);
 
     //Set Amazon URL.
-    String amazonURL = 'https://www.amazon.in/dp/$amazonASIN';
+    amazonURL = 'https://www.amazon.in/dp/$amazonASIN';
     print(amazonURL);
 
     //Get response from Amazon with the provided URL.
@@ -44,16 +45,36 @@ processUrl(String url) async {
       String asinTitleTemp =
           responseBody.substring(indexOfTitle, indexOfTitle + 150);
       amazonName = asinTitleTemp.substring(0, asinTitleTemp.indexOf("\n"));
-      print(amazonName);
+      print('processing: $amazonName');
 
-      products.add(Product(
-          productASIN: amazonASIN,
-          productName: amazonName,
-          productPrice: amazonPrice,
-          productUrl: amazonURL));
-      products.forEach((element) {
-        print(element.productName);
+      //Search if the ASIN already exits in the list.
+      int foundProductAt = -1;
+      int currentIndex = -1;
+      products.forEach((product) {
+        currentIndex++;
+        if (product.productASIN == amazonASIN) {
+          foundProductAt = currentIndex;
+        }
       });
+
+      //If found, update values, else append to list.
+      if (foundProductAt == -1) {
+        products.add(Product(
+            productASIN: amazonASIN,
+            productName: amazonName,
+            productPrice: amazonPrice,
+            productUrl: amazonURL));
+        products.forEach((element) {
+          print(element.productName);
+        });
+      } else {
+        Product product = Product(
+            productASIN: amazonASIN,
+            productName: amazonName,
+            productPrice: amazonPrice,
+            productUrl: amazonURL);
+        products[foundProductAt] = product;
+      }
     }
   }
 }
