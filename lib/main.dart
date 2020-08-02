@@ -163,8 +163,12 @@ class _MyHomePageState extends State<MyHomePage> {
           amazonPrice = 'Price data not available';
         }
         print(amazonPrice);
-        product.priceHistory.add(amazonPrice);
-        print(product.priceHistory);
+        if (amazonPrice != product.priceHistory.last) {
+          product.priceHistory.add(amazonPrice);
+          print('Price changed, updating dB');
+        } else {
+          print('Price remains unchanged');
+        }
 
         //Search if the ASIN already exits in the list.
         int foundProductAt = -1;
@@ -176,17 +180,40 @@ class _MyHomePageState extends State<MyHomePage> {
           }
         });
 
+        //Update at index position of products list.
         Product updatedProduct = Product(
             productASIN: product.productASIN,
             productName: product.productName,
             productPrice: amazonPrice,
             productUrl: product.productUrl,
             priceHistory: product.priceHistory);
-        products[foundProductAt] = (updatedProduct);
+        products[foundProductAt] = updatedProduct;
 
         setState(() {});
       }
     });
+  }
+
+  getTrailingWidget(String price, List<String> history) {
+    double doublePrice = double.parse(price);
+    List<double> doubleHistory = [];
+    history.forEach((element) {
+      doubleHistory.add(double.parse(element));
+    });
+    double difference = doublePrice - doubleHistory.last;
+    if (difference < 0) {
+      return Text(
+        difference.toString(),
+        style: TextStyle(
+            color: Colors.green, fontSize: 18, fontWeight: FontWeight.bold),
+      );
+    } else if (difference > 0) {
+      return Text(
+        difference.toString(),
+        style: TextStyle(
+            color: Colors.red, fontSize: 18, fontWeight: FontWeight.bold),
+      );
+    }
   }
 
   @override
@@ -223,6 +250,8 @@ class _MyHomePageState extends State<MyHomePage> {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
+              trailing: getTrailingWidget(
+                  products[index].productPrice, products[index].priceHistory),
               onLongPress: () {
                 launch(products[index].productUrl);
               },

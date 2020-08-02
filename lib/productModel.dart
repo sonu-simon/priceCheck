@@ -5,7 +5,7 @@ class Product {
   String productASIN;
   String productPrice;
   String productUrl;
-  List priceHistory;
+  List<String> priceHistory;
 
   Product({
     this.productASIN,
