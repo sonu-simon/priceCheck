@@ -1,3 +1,5 @@
+import 'package:flutter/cupertino.dart';
+
 class Product {
   String productName;
   String productASIN;
@@ -5,12 +7,13 @@ class Product {
   String productUrl;
   List priceHistory;
 
-  Product(
-      {this.productASIN,
-      this.productName,
-      this.productPrice,
-      this.productUrl,
-      this.priceHistory});
+  Product({
+    this.productASIN,
+    this.productName,
+    this.productPrice,
+    this.productUrl,
+    this.priceHistory,
+  });
 }
 
 List<Product> products = [];
