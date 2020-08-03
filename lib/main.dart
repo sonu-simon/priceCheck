@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 
+import 'package:amazon_kt/database.dart';
 import 'package:amazon_kt/productModel.dart';
 import 'package:awesome_dialog/awesome_dialog.dart';
 import 'package:flutter/material.dart';
@@ -28,10 +30,22 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   StreamSubscription _intentDataStreamSubscription;
+  DatabaseReference databaseReference = DatabaseReference();
+
+  initializeContents() async {
+    print('read started');
+    databaseReference.readcontent().then((_) {
+      print('read Completed');
+      print('updating contents');
+      updateProductDetails();
+    });
+  }
 
   @override
   void initState() {
     super.initState();
+
+    initializeContents();
 
     // For sharing or opening urls/text coming from outside the app while the app is in the memory
     _intentDataStreamSubscription =
@@ -55,12 +69,20 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   processUrl(String url, BuildContext context) async {
+    print('==============================');
+    print('processUrl');
+    print('==============================');
+
     String amazonASIN = 'initialASIN';
     String responseBody = '';
-    String amazonPrice;
+    String amazonPrice = '-123';
     String amazonName;
     String amazonURL;
 
+    int indexOfPrice = 0;
+    int indexOfTitle = 0;
+
+    print('processing new product');
     if (url == '') {
       print("URL is empty");
       amazonASIN = 'URL is empty';
@@ -80,13 +102,28 @@ class _MyHomePageState extends State<MyHomePage> {
 
       //Get response from Amazon with the provided URL.
       var response = await http.get(amazonURL);
+      print('response.statusCode : ${response.statusCode}');
 
       //If the http request is successful the statusCode will be 200
       if (response.statusCode == 200) {
         responseBody = response.body;
-
+        print(responseBody.indexOf('data-asin-price'));
+        if (responseBody.indexOf('data-asin-price') == -1) {
+          print(responseBody);
+          return AwesomeDialog(
+            context: context,
+            dialogType: DialogType.ERROR,
+            animType: AnimType.BOTTOMSLIDE,
+            title: 'Uh..Oh!',
+            desc: 'new indexOf data-asin-price chathichu',
+            btnOkOnPress: () {
+              print('========== OK ===========');
+            },
+          )..show();
+        }
         //Extract price of the product from the response from Amazon
-        int indexOfPrice = responseBody.indexOf('data-asin-price') + 17;
+        indexOfPrice = responseBody.indexOf('data-asin-price') + 17;
+        print(indexOfPrice);
         String asinPriceTemp =
             responseBody.substring(indexOfPrice, indexOfPrice + 10);
         amazonPrice = asinPriceTemp.substring(0, asinPriceTemp.indexOf("\""));
@@ -96,7 +133,7 @@ class _MyHomePageState extends State<MyHomePage> {
         print(amazonPrice);
 
         //Extract name of the product from the response from Amazon
-        int indexOfTitle =
+        indexOfTitle =
             responseBody.indexOf('a-size-large product-title-word-brea') + 47;
         String asinTitleTemp =
             responseBody.substring(indexOfTitle, indexOfTitle + 150);
@@ -104,29 +141,27 @@ class _MyHomePageState extends State<MyHomePage> {
         print('processing: $amazonName');
 
         //Search if the ASIN already exits in the list.
-        int foundProductAt = -1;
-        int currentIndex = -1;
+        int flagFound = 1;
         products.forEach((product) {
-          currentIndex++;
           if (product.productASIN == amazonASIN) {
-            foundProductAt = currentIndex;
+            flagFound = 0;
           }
         });
 
-        //If found, update values, else append to list.
-        if (foundProductAt == -1) {
+        print('flagFound : $flagFound');
+        //If found, return dialog, else append to list.
+        if (flagFound == 1) {
           Product product = Product(
               productASIN: amazonASIN,
               productName: amazonName,
               productPrice: amazonPrice,
               productUrl: amazonURL,
-              priceHistory: [amazonPrice]);
+              priceHistory: amazonPrice);
           products.add(product);
 
-          setState(() {});
-
-          products.forEach((element) {
-            print(element.productName);
+          databaseReference.writeContent().then((_) {
+            print('write successful, proceeding to setState');
+            setState(() {});
           });
         } else {
           return AwesomeDialog(
@@ -143,7 +178,16 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   updateProductDetails() {
+    print('==============================');
+    print('updateProductDetails');
+    print('==============================');
+
+    int indexOfPrice = 0;
+
+    int forEachIndex = -1;
     products.forEach((product) async {
+      ++forEachIndex;
+      print('forEachIndex : $forEachIndex');
       String responseBody = '';
       String amazonPrice;
       String url = product.productUrl;
@@ -154,31 +198,32 @@ class _MyHomePageState extends State<MyHomePage> {
       if (response.statusCode == 200) {
         responseBody = response.body;
 
+        if (responseBody.indexOf('data-asin-price') == -1) {
+          return AwesomeDialog(
+            context: context,
+            dialogType: DialogType.ERROR,
+            animType: AnimType.BOTTOMSLIDE,
+            title: 'Uh..Oh!',
+            desc: 'update indexOf data-asin-price chathichu',
+            btnOkOnPress: () {},
+          )..show();
+        }
+
         //Extract price of the product from the response from Amazon
-        int indexOfPrice = responseBody.indexOf('data-asin-price') + 17;
+        indexOfPrice = responseBody.indexOf('data-asin-price') + 17;
         String asinPriceTemp =
             responseBody.substring(indexOfPrice, indexOfPrice + 10);
         amazonPrice = asinPriceTemp.substring(0, asinPriceTemp.indexOf("\""));
         if (amazonPrice == '') {
           amazonPrice = 'Price data not available';
         }
-        print(amazonPrice);
-        if (amazonPrice != product.priceHistory.last) {
-          product.priceHistory.add(amazonPrice);
-          print('Price changed, updating dB');
+        // print(amazonPrice);
+        if (amazonPrice != product.priceHistory) {
+          product.priceHistory = amazonPrice;
+          // print('Price changed, updating dB');
         } else {
-          print('Price remains unchanged');
+          // print('Price remains unchanged');
         }
-
-        //Search if the ASIN already exits in the list.
-        int foundProductAt = -1;
-        int currentIndex = -1;
-        products.forEach((productSearch) {
-          currentIndex++;
-          if (productSearch.productASIN == product.productASIN) {
-            foundProductAt = currentIndex;
-          }
-        });
 
         //Update at index position of products list.
         Product updatedProduct = Product(
@@ -187,20 +232,21 @@ class _MyHomePageState extends State<MyHomePage> {
             productPrice: amazonPrice,
             productUrl: product.productUrl,
             priceHistory: product.priceHistory);
-        products[foundProductAt] = updatedProduct;
-
-        setState(() {});
+        products[forEachIndex] = updatedProduct;
       }
+    });
+
+    databaseReference.writeContent().then((_) {
+      print('write successful, proceeding to setState');
+      setState(() {});
     });
   }
 
-  getTrailingWidget(String price, List<String> history) {
+  getTrailingWidget(String price, String history) {
     double doublePrice = double.parse(price);
-    List<double> doubleHistory = [];
-    history.forEach((element) {
-      doubleHistory.add(double.parse(element));
-    });
-    double difference = doublePrice - doubleHistory.last;
+    double doubleHistory = double.parse(history);
+
+    double difference = doublePrice - doubleHistory;
     if (difference < 0) {
       return Text(
         difference.toString(),
@@ -252,8 +298,12 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               trailing: getTrailingWidget(
                   products[index].productPrice, products[index].priceHistory),
-              onLongPress: () {
+              onTap: () {
                 launch(products[index].productUrl);
+              },
+              onLongPress: () {
+                products.removeAt(index);
+                updateProductDetails();
               },
             ),
           );

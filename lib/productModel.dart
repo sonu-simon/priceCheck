@@ -5,7 +5,7 @@ class Product {
   String productASIN;
   String productPrice;
   String productUrl;
-  List<String> priceHistory;
+  String priceHistory;
 
   Product({
     this.productASIN,
@@ -14,6 +14,21 @@ class Product {
     this.productUrl,
     this.priceHistory,
   });
+
+  // Product.fromJson(Map<String, dynamic> json)
+  //     : productName = json['productName'],
+  //       productASIN = json['productASIN'],
+  //       productPrice = json['productPrice'],
+  //       productUrl = json['productUrl'],
+  //       priceHistory = json['priceHistory'];
+
+  Map toJson() => {
+        'productName': productName,
+        'productASIN': productASIN,
+        'productPrice': productPrice,
+        'productUrl': productUrl,
+        'priceHistory': priceHistory
+      };
 }
 
 List<Product> products = [];
